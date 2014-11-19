@@ -7,13 +7,16 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Scanner;
+import java.util.concurrent.locks.Lock;
 
 /**
  * 
  * @author Axel Sigl
  *
  */
-public class Server{
+public class Server {
+	private OutputThread outThread = new OutputThread();
+	private String mode = "output";
 
 	/**
 	 * 
@@ -34,45 +37,97 @@ public class Server{
 	 */
 	private void runServer() throws Exception {
 		ServerSocket serverSocket = new ServerSocket(0);
-		System.out.println("Server started");
-		
-		new IOThread().start();
-		
+		println("Server started");
+
+		new InputThread().start();
+
 		int id = 0;
-		while(true) {
+		while (true) {
 			Socket clientSocket = serverSocket.accept();
 			ClientThread clientThread = new ClientThread(clientSocket, id++);
 			clientThread.start();
 		}
 	}
 
+	/**
+	 * 
+	 * @author Axel Sigl
+	 * @param msg
+	 */
+	public static void println(String msg) {
+		System.out.println("> " + msg);
+	}
+
 	public static void main(String[] args) {
 		new Server();
 	}
-}
 
-/**
- * 
- * @author Axel Sigl
- *
- */
-class IOThread extends Thread{
-	Scanner in = new Scanner(System.in);
-	String input = "";
-	
-	public void run(){
-		System.out.println("Started IO thread");
-		
-		while(true){
-			input = in.nextLine();
-			System.out.println("Parsing command: " + input);
-			
-			if(input.equals("q")){
-				System.out.println("Server shutting down");
-				System.exit(0);
+	class InputThread extends Thread {
+		String cmd = "";
+		Scanner in = new Scanner(System.in);
+
+		public void run() {
+
+			outThread.start();
+
+			while(true) {
+				in.nextLine();
+				outThread.pause();
+
+				Server.println("Input mode");
+				cmd = in.nextLine();
+
+				if(cmd.equals("quit")){
+					Server.println("Server shutting down");
+					System.exit(0);
+				}
+				
+				outThread.unpause();
 			}
 		}
 	}
+
+	/**
+	 * 
+	 * @author Axel Sigl
+	 *
+	 */
+	class OutputThread extends Thread {
+		private boolean paused = false;
+
+		public synchronized void run() {
+
+			while (true) {
+
+				if (paused) {
+					try {
+						wait();
+						Server.println("Output mode");
+					} catch (InterruptedException e1) {
+						e1.printStackTrace();
+					}
+				}
+
+				Server.println("output");
+
+				try {
+					this.sleep(1000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+
+		public void pause() {
+			paused = true;
+		}
+
+		public synchronized void unpause() {
+			notify();
+			paused = false;
+		}
+	}
+
 }
 
 class ClientThread extends Thread {
@@ -98,6 +153,7 @@ class ClientThread extends Thread {
 			while (running) {
 				String clientCommand = in.readLine();
 				System.out.println("Client Says :" + clientCommand);
+
 				if (clientCommand.equalsIgnoreCase("quit")) {
 					System.out.print("Stopping client thread for client : "
 							+ clientID);
