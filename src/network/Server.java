@@ -7,7 +7,8 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Scanner;
-import java.util.concurrent.locks.Lock;
+
+import network.Server.OutputThread;
 
 /**
  * 
@@ -15,6 +16,7 @@ import java.util.concurrent.locks.Lock;
  *
  */
 public class Server {
+	private InputThread inThread = new InputThread();
 	private OutputThread outThread = new OutputThread();
 	private String mode = "output";
 
@@ -36,17 +38,22 @@ public class Server {
 	 * @throws Exception
 	 */
 	private void runServer() throws Exception {
-		ServerSocket serverSocket = new ServerSocket(0);
-		println("Server started");
-
-		new InputThread().start();
-
+		ServerSocket serverSocket = new ServerSocket(12345);
+		inThread.start();
+		outThread.start();
+		
+		outThread.addOutput("Server started");
+		
 		int id = 0;
 		while (true) {
 			Socket clientSocket = serverSocket.accept();
-			ClientThread clientThread = new ClientThread(clientSocket, id++);
+			ClientThread clientThread = new ClientThread(clientSocket, id++, outThread);
 			clientThread.start();
 		}
+	}
+	
+	public OutputThread getOutputThread(){
+		return outThread;
 	}
 
 	/**
@@ -58,33 +65,13 @@ public class Server {
 		System.out.println("> " + msg);
 	}
 
+	/**
+	 * 
+	 * @author Axel Sigl
+	 * @param args
+	 */
 	public static void main(String[] args) {
 		new Server();
-	}
-
-	class InputThread extends Thread {
-		String cmd = "";
-		Scanner in = new Scanner(System.in);
-
-		public void run() {
-
-			outThread.start();
-
-			while(true) {
-				in.nextLine();
-				outThread.pause();
-
-				Server.println("Input mode");
-				cmd = in.nextLine();
-
-				if(cmd.equals("quit")){
-					Server.println("Server shutting down");
-					System.exit(0);
-				}
-				
-				outThread.unpause();
-			}
-		}
 	}
 
 	/**
@@ -93,22 +80,28 @@ public class Server {
 	 *
 	 */
 	class OutputThread extends Thread {
+		private String[] outputQueue = new String[100];
+		private int nOutputs = 0;
 		private boolean paused = false;
 
-		public synchronized void run() {
+		/**
+		 * @author Axel Sigl
+		 */
+		public synchronized void run(){
 
 			while (true) {
-
-				if (paused) {
+				if(paused) {
 					try {
 						wait();
-						Server.println("Output mode");
+						println("Output mode");
 					} catch (InterruptedException e1) {
 						e1.printStackTrace();
 					}
 				}
-
-				Server.println("output");
+				
+				addOutput("test output");
+				println(outputQueue[0]);
+				remOutput(0);
 
 				try {
 					this.sleep(1000);
@@ -117,50 +110,129 @@ public class Server {
 				}
 			}
 		}
-
+		
+		/**
+		 * 
+		 * @author Axel Sigl
+		 */
 		public void pause() {
 			paused = true;
 		}
 
+		/**
+		 * 
+		 * @author Axel Sigl
+		 */
 		public synchronized void unpause() {
 			notify();
 			paused = false;
 		}
+		
+		/**
+		 * 
+		 * @author Axel Sigl
+		 * @param msg
+		 */
+		public void addOutput(String msg){
+			outputQueue[nOutputs++] = msg;
+		}
+		
+		/**
+		 * 
+		 * @author Axel Sigl
+		 * @param i
+		 */
+		private void remOutput(int i){
+			for(i += 0; i < nOutputs; i++){
+				outputQueue[i] = outputQueue[i + 1];
+			}
+			nOutputs--;
+		}
 	}
+	
+	/**
+	 * 
+	 * @author Axel Sigl
+	 *
+	 */
+	private class InputThread extends Thread {
+		Scanner in = new Scanner(System.in);
+		String input = "";
 
+		/**
+		 * @author Axel Sigl
+		 */
+		public void run() {
+
+			while(true) {
+				in.nextLine();
+				outThread.pause();
+
+				println("Input mode");
+				input = in.nextLine();
+				Server.println(new Command().parseRootCommand(input));
+				
+				outThread.unpause();
+			}
+		}
+	}
 }
 
+/**
+ * 
+ * @author Axel Sigl
+ *
+ */
 class ClientThread extends Thread {
 	Socket clientSocket;
+	OutputThread outThread;
 	int clientID = -1;
 	boolean running = true;
 
-	ClientThread(Socket s, int i) {
+	/**
+	 * 
+	 * @author Axel Sigl
+	 * @param s
+	 * @param i
+	 * @param outThread
+	 */
+	ClientThread(Socket s, int i, OutputThread outThread) {
 		clientSocket = s;
 		clientID = i;
+		this.outThread = outThread;
 	}
 
+	/**
+	 * @author Axel Sigl
+	 */
 	public void run() {
-		System.out
-				.println("Accepted Client : ID - " + clientID + " : Address - "
+		BufferedReader in;
+		PrintWriter out;
+		String input;
+		
+		outThread.addOutput("Accepted Client : ID - " + clientID + " : Address - "
 						+ clientSocket.getInetAddress().getHostName());
 		try {
-			BufferedReader in = new BufferedReader(new InputStreamReader(
+			in = new BufferedReader(new InputStreamReader(
 					clientSocket.getInputStream()));
-			PrintWriter out = new PrintWriter(new OutputStreamWriter(
+			out = new PrintWriter(new OutputStreamWriter(
 					clientSocket.getOutputStream()));
 
-			while (running) {
-				String clientCommand = in.readLine();
-				System.out.println("Client Says :" + clientCommand);
+			while(running) {
+				input = in.readLine();
+				outThread.addOutput("Client Says :" + input);
 
-				if (clientCommand.equalsIgnoreCase("quit")) {
-					System.out.print("Stopping client thread for client : "
-							+ clientID);
-				} else {
-					out.println(clientCommand);
+				if (input.equals("quit")) {
+					outThread.addOutput("Stopping client thread for client : " + clientID);
+					running = false;
+				}
+				else {
+					out.println(input);
 					out.flush();
 				}
+				
+				Server.println(new Command().parseUserCommand(input));
+					
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
