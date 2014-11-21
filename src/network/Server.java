@@ -1,3 +1,5 @@
+package network;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -7,12 +9,14 @@ import java.net.Socket;
 
 public class Server {
   public static void main(String[] args) throws Exception {
-    ServerSocket serverSocket = new ServerSocket(12345);
+	  
+    ServerSocket serverSocket = new ServerSocket(8443);
     int id = 0;
     while (true) {
       Socket clientSocket = serverSocket.accept();
       ClientThread clientThread = new ClientThread(clientSocket, id++);
       clientThread.start();
+      System.exit(0);
     }
   }
 }
@@ -43,6 +47,7 @@ class ClientThread extends Thread {
         } else {
           out.println(clientCommand);
           out.flush();
+          
         }
       }
     } catch (Exception e) {
