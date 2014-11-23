@@ -216,11 +216,15 @@ class ClientThread extends Thread {
 		
 		try {
 			in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+<<<<<<< HEAD
 			out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
+=======
+			out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()), true);
+>>>>>>> 8d2b41b3d87aace8a432ea3b19cbec3290ba2852
 
 			while(running) {
 				input = in.readLine();
-				outThread.addOutput("Client Says :" + input);
+				outThread.addOutput("Client Says: " + input);
 
 				if (input.equals("quit")) {
 					outThread.addOutput("Stopping client thread for client : " + clientID);
