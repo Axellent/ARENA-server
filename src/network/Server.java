@@ -99,9 +99,11 @@ public class Server {
 					}
 				}
 				
-				addOutput("test output");
-				println(outputQueue[0]);
-				remOutput(0);
+				//addOutput("test output");
+				if(nOutputs > 0){
+					println(outputQueue[0]);
+					remOutput(0);
+				}
 
 				try {
 					this.sleep(1000);
@@ -210,13 +212,11 @@ class ClientThread extends Thread {
 		PrintWriter out;
 		String input;
 		
-		outThread.addOutput("Accepted Client : ID - " + clientID + " : Address - "
-						+ clientSocket.getInetAddress().getHostName());
+		outThread.addOutput("Accepted Client : ID - " + clientID + " : Address - " + clientSocket.getInetAddress().getHostName());
+		
 		try {
-			in = new BufferedReader(new InputStreamReader(
-					clientSocket.getInputStream()));
-			out = new PrintWriter(new OutputStreamWriter(
-					clientSocket.getOutputStream()));
+			in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+			out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
 
 			while(running) {
 				input = in.readLine();

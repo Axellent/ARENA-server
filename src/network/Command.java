@@ -21,10 +21,10 @@ public class Command {
 		switch (cmd[0]) {
 		
 		case("help"):
-			return "Basic syntax: COMMAND [OPTIONS] [ARGUMENTS]";
+			return help();
 		}
 		
-		return "Unknown command " + cmd[0];
+		return "Unknown command " + cmd[0] + "\r";
 	}
 
 	/**
@@ -41,13 +41,17 @@ public class Command {
 		switch (cmd[0]) {
 
 		case ("quit"):
-			Server.println("Server shutting down");
+			Server.println("Server shutting down \r");
 			System.exit(0);
 			
 		case("help"):
-			return "Basic syntax: COMMAND [OPTIONS] [ARGUMENTS]";
+			return help();
 		}
 		
-		return "Unknown command " + cmd[0];
+		return "Unknown command " + cmd[0] + "\r";
+	}
+	
+	public String help(){
+		return "Basic syntax: COMMAND [OPTIONS] [ARGUMENTS] \r";
 	}
 }
