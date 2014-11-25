@@ -99,9 +99,11 @@ public class Server {
 					}
 				}
 				
-				addOutput("test output");
-				println(outputQueue[0]);
-				remOutput(0);
+				//addOutput("test output");
+				if(nOutputs > 0){
+					println(outputQueue[0]);
+					remOutput(0);
+				}
 
 				try {
 					this.sleep(1000);
@@ -210,17 +212,19 @@ class ClientThread extends Thread {
 		PrintWriter out;
 		String input;
 		
-		outThread.addOutput("Accepted Client : ID - " + clientID + " : Address - "
-						+ clientSocket.getInetAddress().getHostName());
+		outThread.addOutput("Accepted Client : ID - " + clientID + " : Address - " + clientSocket.getInetAddress().getHostName());
+		
 		try {
-			in = new BufferedReader(new InputStreamReader(
-					clientSocket.getInputStream()));
-			out = new PrintWriter(new OutputStreamWriter(
-					clientSocket.getOutputStream()));
+			in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+<<<<<<< HEAD
+			out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
+=======
+			out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()), true);
+>>>>>>> 8d2b41b3d87aace8a432ea3b19cbec3290ba2852
 
 			while(running) {
 				input = in.readLine();
-				outThread.addOutput("Client Says :" + input);
+				outThread.addOutput("Client Says: " + input);
 
 				if (input.equals("quit")) {
 					outThread.addOutput("Stopping client thread for client : " + clientID);
