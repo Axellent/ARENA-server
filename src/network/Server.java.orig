@@ -16,6 +16,19 @@ import network.Server.OutputThread;
  *
  */
 public class Server {
+<<<<<<< HEAD
+  public static void main(String[] args) throws Exception {
+	  
+    ServerSocket serverSocket = new ServerSocket(8443);
+    int id = 0;
+    while (true) {
+      Socket clientSocket = serverSocket.accept();
+      ClientThread clientThread = new ClientThread(clientSocket, id++);
+      clientThread.start();
+      System.exit(0);
+    }
+  }
+=======
 	private InputThread inThread = new InputThread();
 	private OutputThread outThread = new OutputThread();
 	private String mode = "output";
@@ -176,6 +189,7 @@ public class Server {
 			}
 		}
 	}
+>>>>>>> a976eac39973a99ab636f0f06ed058038b27fb2d
 }
 
 /**
@@ -184,6 +198,40 @@ public class Server {
  *
  */
 class ClientThread extends Thread {
+<<<<<<< HEAD
+  Socket clientSocket;
+  int clientID = -1;
+  boolean running = true;
+
+  ClientThread(Socket s, int i) {
+    clientSocket = s;
+    clientID = i;
+  }
+
+  public void run() {
+    System.out.println("Accepted Client : ID - " + clientID + " : Address - "
+        + clientSocket.getInetAddress().getHostName());
+    try {
+      BufferedReader   in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+      PrintWriter   out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
+      
+      while (running) {
+        String clientCommand = in.readLine();
+        System.out.println("Client Says :" + clientCommand);
+        if (clientCommand.equalsIgnoreCase("quit")) {
+          running = false;
+          System.out.print("Stopping client thread for client : " + clientID);
+        } else {
+          out.println(clientCommand);
+          out.flush();
+          
+        }
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
+=======
 	Socket clientSocket;
 	OutputThread outThread;
 	int clientID = -1;
@@ -238,4 +286,5 @@ class ClientThread extends Thread {
 			e.printStackTrace();
 		}
 	}
+>>>>>>> a976eac39973a99ab636f0f06ed058038b27fb2d
 }
