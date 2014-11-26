@@ -42,7 +42,8 @@ public class Server {
 		inThread.start();
 		outThread.start();
 		
-		outThread.addOutput("Server started");
+		outThread.addOutput("ARENA-server started. press return to switch between input and output modes. type \"help\" while in input mode for instuctions\r\r"
+							+ "> Output mode");
 		
 		int id = 0;
 		while (true) {
@@ -52,6 +53,11 @@ public class Server {
 		}
 	}
 	
+	/**
+	 * 
+	 * @author Axel Sigl
+	 * @return
+	 */
 	public OutputThread getOutputThread(){
 		return outThread;
 	}
@@ -99,7 +105,6 @@ public class Server {
 					}
 				}
 				
-				//addOutput("test output");
 				if(nOutputs > 0){
 					println(outputQueue[0]);
 					remOutput(0);
@@ -186,6 +191,7 @@ public class Server {
  *
  */
 class ClientThread extends Thread {
+	Command command;
 	Socket clientSocket;
 	OutputThread outThread;
 	int clientID = -1;
@@ -202,6 +208,7 @@ class ClientThread extends Thread {
 		clientSocket = s;
 		clientID = i;
 		this.outThread = outThread;
+		command = new Command();
 	}
 
 	/**
@@ -211,6 +218,7 @@ class ClientThread extends Thread {
 		BufferedReader in;
 		PrintWriter out;
 		String input;
+		String output;
 		
 		outThread.addOutput("Accepted Client : ID - " + clientID + " : Address - " + clientSocket.getInetAddress().getHostName());
 		
@@ -220,18 +228,21 @@ class ClientThread extends Thread {
 
 			while(running) {
 				input = in.readLine();
-				outThread.addOutput("Client Says: " + input);
+				outThread.addOutput("Client : " + clientSocket.getInetAddress().getHostName() + " Requests command : " + input);
+				
+				output = command.parseUserCommand(input);
 
-				if (input.equals("quit")) {
-					outThread.addOutput("Stopping client thread for client : " + clientID);
+				if (output.equals("quit")) {
+					outThread.addOutput("Stopping client thread for client : " + clientSocket.getInetAddress().getHostName());
+					out.println("Stopping client thread");
+					out.flush();
 					running = false;
 				}
-				else {
-					out.println(input);
+				else{
+					outThread.addOutput(output);
+					out.println(output);
 					out.flush();
 				}
-				
-				Server.println(new Command().parseUserCommand(input));
 					
 			}
 		} catch (Exception e) {
