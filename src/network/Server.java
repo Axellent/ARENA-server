@@ -91,6 +91,7 @@ public class Server {
 		private boolean paused = false;
 
 		/**
+		 * 
 		 * @author Axel Sigl
 		 */
 		public synchronized void run(){
@@ -212,6 +213,7 @@ class ClientThread extends Thread {
 	}
 
 	/**
+	 * 
 	 * @author Axel Sigl
 	 */
 	public void run() {
@@ -224,11 +226,7 @@ class ClientThread extends Thread {
 		
 		try {
 			in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-<<<<<<< HEAD
-			out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
-=======
 			out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()), true);
->>>>>>> 8d2b41b3d87aace8a432ea3b19cbec3290ba2852
 
 			while(running) {
 				input = in.readLine();
@@ -244,13 +242,29 @@ class ClientThread extends Thread {
 				}
 				else{
 					outThread.addOutput(output);
-					out.println(output);
+					sendOutput(out, output);
 					out.flush();
 				}
 					
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			outThread.addOutput("Stopping client thread for client : " + clientSocket.getInetAddress().getHostName() + " : Connection interuppted");
+		}
+	}
+	
+	/**
+	 * Splits the output into lines (with return characters as separators) and sends the result to the client.
+	 * @author Axel Sigl
+	 * @param out
+	 * @param output
+	 */
+	private void sendOutput(PrintWriter out, String output){
+		String[] outputLines;
+		
+		outputLines = output.split("\\r");
+		
+		for(int i = 0; i < outputLines.length; i++){
+			out.println(outputLines[i]);
 		}
 	}
 }

@@ -1,6 +1,8 @@
 package network;
 
+import java.io.EOFException;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -15,9 +17,11 @@ public class Command {
 	private Account[] allAccounts;
 	private int nAccounts = 0;
 	private Account account;
-	private String testUsername = "testAccount";
-	private String testPassword = "testPassword";
 	
+	/**
+	 * 
+	 * @author Axel Sigl
+	 */
 	public Command(){
 		loadAccounts();
 	}
@@ -76,12 +80,21 @@ public class Command {
 		return unknownCommand(cmd[0]);
 	}
 	
+	/**
+	 * 
+	 * @author Axel Sigl
+	 * @return
+	 */
 	private String quit(){
 		return "quit";
 	}
 	
+	/**
+	 * 
+	 * @author Axel Sigl
+	 */
 	private void shutdown(){
-		Server.println("ARENA-server shutting down \r");
+		Server.println("ARENA-server shutting down");
 		System.exit(0);
 	}
 	
@@ -91,31 +104,31 @@ public class Command {
 	 * @return
 	 */
 	private String help(){
-		return "Welcome to the ARENA-server, enter a command to begin\n"
-				+ "Syntax: COMMAND [ARGUMENTS]\r"
-				+ "Example: login yourAccountName yourPassword\r\r"
-				+ "List of commands:\r"
-				+ "quit - Close client connection(client only)\r"
-				+ "shutdown - Shutdown ARENA-server(root only)\r"
-				+ "help - This command\r"
-				+ "login acountName password - Login with ARENA account\r"
-				+ "register accountName password type - Register a new ARENA account as user type";
+		return "Welcome to the ARENA-server, enter a command to begin\r"
+				+ "> Syntax: COMMAND [ARGUMENTS]\r"
+				+ "> Example: login yourAccountName yourPassword\r \r"
+				+ "> List of commands:\r"
+				+ "> quit - Close client connection(client only)\r"
+				+ "> shutdown - Shutdown ARENA-server(root only)\r"
+				+ "> help - This command\r"
+				+ "> login acountName password - Login with ARENA account\r"
+				+ "> register accountName password type - Register a new ARENA account as user type";
 	}
 	
 	/**
-	 * 
+	 * Authenticates the user if the login can be found and verified.
+	 * The login persists as long as the connection exists and is connected to the server.
 	 * @author Axel Sigl
 	 * @param accountName
 	 * @param password
-	 * @param ID
 	 * @return
 	 */
 	private String login(String accountName, String password){
-		
-		if(accountName.equals(testUsername) && password.equals(testPassword)){
-			account = new Account(accountName, password, nAccounts);
+			
+		account = searchAccounts(accountName);
+		if(accountName == account.getName() && password == account.getPassword()){
 			account.setAuthenticated(true);
-			return "User : " + account.getName() + " logged in succesfully";
+			return "User : " + accountName + " logged in succesfully";
 		}
 		
 		return "Incorrect username or password";
@@ -126,16 +139,21 @@ public class Command {
 	 * @author Axel Sigl
 	 * @param accountName
 	 * @param password
+	 * @param type
 	 * @return
 	 */
 	private String register(String accountName, String password, String type){
 		
-		if(accountName.length() > 3 && password.length() > 3){
-			allAccounts[nAccounts] = new Account(accountName, password, nAccounts++);
-			return "User : " + accountName + " registered successfully";
+		if(!(accountName.length() > 3 && password.length() > 3)){
+			return "Accountname and password must both be more than three characters long";
 		}
 		
-		return "Accountname and password must both be more than three characters long";
+		if(searchAccounts(accountName) != null){
+			return "Accountname already in use";
+		}
+		
+		allAccounts[nAccounts] = new Account(accountName, password, type, nAccounts++);
+		return "User : " + accountName + " registered successfully";
 	}
 	
 	/**
@@ -151,6 +169,22 @@ public class Command {
 	/**
 	 * 
 	 * @author Axel Sigl
+	 * @param accountName
+	 * @return
+	 */
+	public Account searchAccounts(String accountName){
+		for(int i = 0; i < nAccounts; i++){
+			if(accountName.equals(allAccounts[i].getName())){
+				return allAccounts[i];
+			}
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * 
+	 * @author Axel Sigl
 	 */
 	public void loadAccounts(){
 		allAccounts = new Account[1000000];
@@ -161,9 +195,16 @@ public class Command {
 			allAccounts = (Account[]) in.readObject();
 			in.close();
 			
-		} catch (IOException e) {
+		} catch (FileNotFoundException e) {
 			e.printStackTrace();
+		} catch (EOFException e){
+			Server.println("account file is empty, initializing");
+			allAccounts[0] = new Account("testAccount", "testPassword", "N/A", 0);
+			saveAccounts();
+			loadAccounts();
 		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
@@ -188,7 +229,7 @@ public class Command {
 	/**
 	 * 
 	 * @author Axel Sigl
-	 * @return
+	 * @return The account currently logged in.
 	 */
 	public Account getAccount(){
 		return account;
