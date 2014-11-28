@@ -16,19 +16,6 @@ import network.Server.OutputThread;
  *
  */
 public class Server {
-<<<<<<< HEAD
-  public static void main(String[] args) throws Exception {
-	  
-    ServerSocket serverSocket = new ServerSocket(8443);
-    int id = 0;
-    while (true) {
-      Socket clientSocket = serverSocket.accept();
-      ClientThread clientThread = new ClientThread(clientSocket, id++);
-      clientThread.start();
-      System.exit(0);
-    }
-  }
-=======
 	private InputThread inThread = new InputThread();
 	private OutputThread outThread = new OutputThread();
 	private String mode = "output";
@@ -55,7 +42,8 @@ public class Server {
 		inThread.start();
 		outThread.start();
 		
-		outThread.addOutput("Server started");
+		outThread.addOutput("ARENA-server started. press return to switch between input and output modes. type \"help\" while in input mode for instuctions\r\r"
+							+ "> Output mode");
 		
 		int id = 0;
 		while (true) {
@@ -65,6 +53,11 @@ public class Server {
 		}
 	}
 	
+	/**
+	 * 
+	 * @author Axel Sigl
+	 * @return
+	 */
 	public OutputThread getOutputThread(){
 		return outThread;
 	}
@@ -98,6 +91,7 @@ public class Server {
 		private boolean paused = false;
 
 		/**
+		 * 
 		 * @author Axel Sigl
 		 */
 		public synchronized void run(){
@@ -112,9 +106,10 @@ public class Server {
 					}
 				}
 				
-				addOutput("test output");
-				println(outputQueue[0]);
-				remOutput(0);
+				if(nOutputs > 0){
+					println(outputQueue[0]);
+					remOutput(0);
+				}
 
 				try {
 					this.sleep(1000);
@@ -189,7 +184,6 @@ public class Server {
 			}
 		}
 	}
->>>>>>> a976eac39973a99ab636f0f06ed058038b27fb2d
 }
 
 /**
@@ -198,40 +192,7 @@ public class Server {
  *
  */
 class ClientThread extends Thread {
-<<<<<<< HEAD
-  Socket clientSocket;
-  int clientID = -1;
-  boolean running = true;
-
-  ClientThread(Socket s, int i) {
-    clientSocket = s;
-    clientID = i;
-  }
-
-  public void run() {
-    System.out.println("Accepted Client : ID - " + clientID + " : Address - "
-        + clientSocket.getInetAddress().getHostName());
-    try {
-      BufferedReader   in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-      PrintWriter   out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
-      
-      while (running) {
-        String clientCommand = in.readLine();
-        System.out.println("Client Says :" + clientCommand);
-        if (clientCommand.equalsIgnoreCase("quit")) {
-          running = false;
-          System.out.print("Stopping client thread for client : " + clientID);
-        } else {
-          out.println(clientCommand);
-          out.flush();
-          
-        }
-      }
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-  }
-=======
+	Command command;
 	Socket clientSocket;
 	OutputThread outThread;
 	int clientID = -1;
@@ -248,43 +209,70 @@ class ClientThread extends Thread {
 		clientSocket = s;
 		clientID = i;
 		this.outThread = outThread;
+		command = new Command();
 	}
 
 	/**
+	 * 
 	 * @author Axel Sigl
 	 */
 	public void run() {
 		BufferedReader in;
 		PrintWriter out;
 		String input;
+		String output;
 		
-		outThread.addOutput("Accepted Client : ID - " + clientID + " : Address - "
-						+ clientSocket.getInetAddress().getHostName());
+		outThread.addOutput("Accepted Client : ID - " + clientID + " : Address - " + clientSocket.getInetAddress().getHostName());
+		
 		try {
-			in = new BufferedReader(new InputStreamReader(
-					clientSocket.getInputStream()));
-			out = new PrintWriter(new OutputStreamWriter(
-					clientSocket.getOutputStream()));
+			in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+<<<<<<< HEAD
+
+			out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
+
+			out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()), true);
+
+=======
+			out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()), true);
+>>>>>>> 4e597feca73da1b0986de54b4ace87e5d2219538
 
 			while(running) {
 				input = in.readLine();
-				outThread.addOutput("Client Says :" + input);
+				outThread.addOutput("Client : " + clientSocket.getInetAddress().getHostName() + " Requests command : " + input);
+				
+				output = command.parseUserCommand(input);
 
-				if (input.equals("quit")) {
-					outThread.addOutput("Stopping client thread for client : " + clientID);
+				if (output.equals("quit")) {
+					outThread.addOutput("Stopping client thread for client : " + clientSocket.getInetAddress().getHostName());
+					out.println("Stopping client thread");
+					out.flush();
 					running = false;
 				}
-				else {
-					out.println(input);
+				else{
+					outThread.addOutput(output);
+					sendOutput(out, output);
 					out.flush();
 				}
-				
-				Server.println(new Command().parseUserCommand(input));
 					
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			outThread.addOutput("Stopping client thread for client : " + clientSocket.getInetAddress().getHostName() + " : Connection interuppted");
 		}
 	}
->>>>>>> a976eac39973a99ab636f0f06ed058038b27fb2d
+	
+	/**
+	 * Splits the output into lines (with return characters as separators) and sends the result to the client.
+	 * @author Axel Sigl
+	 * @param out
+	 * @param output
+	 */
+	private void sendOutput(PrintWriter out, String output){
+		String[] outputLines;
+		
+		outputLines = output.split("\\r");
+		
+		for(int i = 0; i < outputLines.length; i++){
+			out.println(outputLines[i]);
+		}
+	}
 }
