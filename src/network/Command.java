@@ -8,22 +8,23 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
+import league.Tournament;
+
 /**
  * 
  * @author Axel Sigl
  *
  */
 public class Command {
-	private Account[] allAccounts;
-	private int nAccounts = 0;
-	private Account account;
+	private FileHandler fileHandler;
+	private Account clientAccount;
 	
 	/**
 	 * 
 	 * @author Axel Sigl
 	 */
 	public Command(){
-		loadAccounts();
+		fileHandler = new FileHandler();
 	}
 	
 	/**
@@ -83,9 +84,29 @@ public class Command {
 	/**
 	 * 
 	 * @author Axel Sigl
+	 * @param input
+	 */
+	public Object parseObjectCommand(String input){
+		String cmd[] = new String[100];
+
+		cmd = input.split("\\s");
+		
+		switch (cmd[0]) {
+
+		case ("-tournament"):
+			return tournament(cmd[1]);
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * 
+	 * @author Axel Sigl
 	 * @return
 	 */
 	private String quit(){
+		clientAccount.setAuthenticated(false);
 		return "quit";
 	}
 	
@@ -125,9 +146,10 @@ public class Command {
 	 */
 	private String login(String accountName, String password){
 			
-		account = searchAccounts(accountName);
-		if(accountName == account.getName() && password == account.getPassword()){
-			account.setAuthenticated(true);
+		clientAccount = fileHandler.searchAccounts(accountName);
+		
+		if(accountName == clientAccount.getName() && password == clientAccount.getPassword()){
+			clientAccount.setAuthenticated(true);
 			return "User : " + accountName + " logged in succesfully";
 		}
 		
@@ -135,7 +157,8 @@ public class Command {
 	}
 	
 	/**
-	 * 
+	 * Registers a new ARENA account with a unique name and ID.
+	 * The zeroth ID is reserved by the system.
 	 * @author Axel Sigl
 	 * @param accountName
 	 * @param password
@@ -143,17 +166,36 @@ public class Command {
 	 * @return
 	 */
 	private String register(String accountName, String password, String type){
+		int nAccounts = fileHandler.getNAccounts();
 		
 		if(!(accountName.length() > 3 && password.length() > 3)){
 			return "Accountname and password must both be more than three characters long";
 		}
 		
-		if(searchAccounts(accountName) != null){
+		if(fileHandler.searchAccounts(accountName) != null){
 			return "Accountname already in use";
 		}
 		
-		allAccounts[nAccounts] = new Account(accountName, password, type, nAccounts++);
+		fileHandler.addAccount(new Account(accountName, password, type, nAccounts));
 		return "User : " + accountName + " registered successfully";
+	}
+	
+	/**
+	 * 
+	 * @author Axel Sigl
+	 * @param tournamentName
+	 * @return
+	 */
+	private Tournament tournament(String tournamentName){
+		Tournament tournament;
+		
+		tournament = fileHandler.searchTournaments(tournamentName);
+		
+		if(tournament != null){
+			return tournament;
+		}
+		
+		return null;
 	}
 	
 	/**
@@ -163,75 +205,16 @@ public class Command {
 	 * @return
 	 */
 	private String unknownCommand(String cmd){
-		return "Unknown command " + cmd + "\r";
+		return "Unknown command : " + cmd + "\r";
 	}
 	
-	/**
-	 * 
-	 * @author Axel Sigl
-	 * @param accountName
-	 * @return
-	 */
-	public Account searchAccounts(String accountName){
-		for(int i = 0; i < nAccounts; i++){
-			if(accountName.equals(allAccounts[i].getName())){
-				return allAccounts[i];
-			}
-		}
-		
-		return null;
-	}
-	
-	/**
-	 * 
-	 * @author Axel Sigl
-	 */
-	public void loadAccounts(){
-		allAccounts = new Account[1000000];
-		
-		try {
-			ObjectInputStream in = new ObjectInputStream(new FileInputStream("accounts.ser"));
-			
-			allAccounts = (Account[]) in.readObject();
-			in.close();
-			
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (EOFException e){
-			Server.println("account file is empty, initializing");
-			allAccounts[0] = new Account("testAccount", "testPassword", "N/A", 0);
-			saveAccounts();
-			loadAccounts();
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-	
-	/**
-	 * 
-	 * @author Axel Sigl
-	 */
-	public void saveAccounts(){
-		ObjectOutputStream out;
-		try {
-			out = new ObjectOutputStream(new FileOutputStream("accounts.ser"));
-			
-			out.writeObject(allAccounts);
-	        out.flush();
-	        out.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
 	
 	/**
 	 * 
 	 * @author Axel Sigl
 	 * @return The account currently logged in.
 	 */
-	public Account getAccount(){
-		return account;
+	public Account getClientAccount(){
+		return clientAccount;
 	}
 }

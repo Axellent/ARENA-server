@@ -192,11 +192,13 @@ public class Server {
  *
  */
 class ClientThread extends Thread {
-	Command command;
-	Socket clientSocket;
-	OutputThread outThread;
-	int clientID = -1;
-	boolean running = true;
+	private Command command;
+	private Socket clientSocket;
+	private OutputThread outThread;
+	private int clientID = -1;
+	private boolean running = true;
+	private BufferedReader inputReader;
+	private PrintWriter outputWriter;
 
 	/**
 	 * 
@@ -217,54 +219,76 @@ class ClientThread extends Thread {
 	 * @author Axel Sigl
 	 */
 	public void run() {
-		BufferedReader in;
-		PrintWriter out;
 		String input;
 		String output;
 		
 		outThread.addOutput("Accepted Client : ID - " + clientID + " : Address - " + clientSocket.getInetAddress().getHostName());
 		
 		try {
-			in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-			out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()), true);
+			inputReader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+			outputWriter = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()), true);
 
 			while(running) {
-				input = in.readLine();
+				input = inputReader.readLine();
 				outThread.addOutput("Client : " + clientSocket.getInetAddress().getHostName() + " Requests command : " + input);
 				
-				output = command.parseUserCommand(input);
-
-				if (output.equals("quit")) {
-					outThread.addOutput("Stopping client thread for client : " + clientSocket.getInetAddress().getHostName());
-					out.println("Stopping client thread");
-					out.flush();
-					running = false;
+				if(input.charAt(0) == '-'){
+					sendObject(command.parseObjectCommand(input));
 				}
+				
 				else{
-					outThread.addOutput(output);
-					sendOutput(out, output);
-					out.flush();
+					sendOutput(command.parseUserCommand(input), input);
 				}
 					
 			}
 		} catch (Exception e) {
+			if(command.getClientAccount() != null){
+				command.getClientAccount().setAuthenticated(false);	
+			}
 			outThread.addOutput("Stopping client thread for client : " + clientSocket.getInetAddress().getHostName() + " : Connection interuppted");
 		}
 	}
 	
 	/**
-	 * Splits the output into lines (with return characters as separators) and sends the result to the client.
+	 * Splits the output into lines (with newline characters as separators) and sends the result to the client.
 	 * @author Axel Sigl
 	 * @param out
 	 * @param output
 	 */
-	private void sendOutput(PrintWriter out, String output){
+	private void sendOutput(String output, String input){
 		String[] outputLines;
 		
-		outputLines = output.split("\\r");
+		if (output.equals("quit")) {
+			command.getClientAccount().setAuthenticated(false);
+			outThread.addOutput("Stopping client thread for client : " + clientSocket.getInetAddress().getHostName());
+			outputWriter.println("Stopping client thread");
+			running = false;
+		}
+		else{
+			outThread.addOutput("Sending output for command : " + input + " to client : " + clientSocket.getInetAddress().getHostName());
+			
+			outputLines = output.split("\\r");
+			
+			for(int i = 0; i < outputLines.length; i++){
+				outputWriter.println(outputLines[i]);
+			}
+		}
+		outputWriter.flush();
+	}
+	
+	/**
+	 * 
+	 * @author Axel Sigl
+	 * @param outputObject
+	 */
+	private void sendObject(Object outputObject){
+		if(outputObject == null){
+			outThread.addOutput("Failed sending object to client :" + clientSocket.getInetAddress().getHostName() + " : Object does not exist");
+			outputWriter.println("Requested object does not exist");
+		}
 		
-		for(int i = 0; i < outputLines.length; i++){
-			out.println(outputLines[i]);
+		else{
+			//send object to client
 		}
 	}
 }
