@@ -13,7 +13,6 @@ import league.Tournament;
 /**
  * 
  * @author Axel Sigl
- *
  */
 public class Command {
 	private FileHandler fileHandler;
@@ -52,6 +51,9 @@ public class Command {
 		
 		case("register"):
 			return register(cmd[1], cmd[2], cmd[3]);
+		
+		case("accountID"):
+			return accountID(cmd[1]);
 		}
 		
 		return unknownCommand(cmd[0]);
@@ -126,14 +128,15 @@ public class Command {
 	 */
 	private String help(){
 		return "Welcome to the ARENA-server, enter a command to begin\r"
-				+ "> Syntax: COMMAND [ARGUMENTS]\r"
-				+ "> Example: login yourAccountName yourPassword\r \r"
-				+ "> List of commands:\r"
-				+ "> quit - Close client connection(client only)\r"
-				+ "> shutdown - Shutdown ARENA-server(root only)\r"
-				+ "> help - This command\r"
-				+ "> login acountName password - Login with ARENA account\r"
-				+ "> register accountName password type - Register a new ARENA account as user type";
+				+ " Syntax: COMMAND [ARGUMENTS]\r"
+				+ " Example: login yourAccountName yourPassword\r \r"
+				+ " List of commands:\r"
+				+ " quit - Close client connection(client only)\r"
+				+ " shutdown - Shutdown ARENA-server(root only)\r"
+				+ " help - This command\r"
+				+ " login acountName password - Login with ARENA account\r"
+				+ " register accountName password type - Register a new ARENA account as user type\r"
+				+ " accountID accountName - returns the ID of the account";
 	}
 	
 	/**
@@ -148,7 +151,7 @@ public class Command {
 			
 		clientAccount = fileHandler.searchAccounts(accountName);
 		
-		if(accountName == clientAccount.getName() && password == clientAccount.getPassword()){
+		if(clientAccount != null && accountName.equals(clientAccount.getName()) && password.equals(clientAccount.getPassword())){
 			clientAccount.setAuthenticated(true);
 			return "User : " + accountName + " logged in succesfully";
 		}
@@ -178,6 +181,24 @@ public class Command {
 		
 		fileHandler.addAccount(new Account(accountName, password, type, nAccounts));
 		return "User : " + accountName + " registered successfully";
+	}
+	
+	/**
+	 * 
+	 * @author Axel Sigl
+	 * @param accountName
+	 * @return
+	 */
+	private String accountID(String accountName){
+		Account tempAcc;
+		
+		tempAcc = fileHandler.searchAccounts(accountName);
+		
+		if(accountName.equals(tempAcc.getName())){
+			return Integer.toString(tempAcc.getID());
+		}
+		
+		return "Could not find account : " + accountName;
 	}
 	
 	/**

@@ -22,15 +22,16 @@ public class FileHandler {
 	
 	// Account for testing purposes, does not have ANY user privileges for security reasons.
 	private static final Account TEST_ACCOUNT = new Account("testName", "testPassword", "N/A", 0);
-	private static final Tournament TEST_TOURNAMENT = new Tournament(new LeagueOwner("testOwner", "testPassword", -1), new Game() , "testTournament", 1, 1);
+	
+	private static final Tournament TEST_TOURNAMENT = new Tournament("testOwner", new Game() , "testTournament", 1, 1);
 	
 	/**
 	 * 
-	 *
 	 * @author Axel Sigl
 	 */
 	public FileHandler(){
 		loadAccounts();
+		loadTournaments();
 	}
 	
 	/**
@@ -64,7 +65,10 @@ public class FileHandler {
 			inStream.close();
 			
 		} catch (FileNotFoundException e) {
-			e.printStackTrace();
+			Server.println("account file is empty, initializing");
+			accounts[0] = TEST_ACCOUNT;
+			saveAccounts();
+			loadAccounts();
 		} catch (EOFException e){
 			Server.println("account file is empty, initializing");
 			accounts[0] = TEST_ACCOUNT;
@@ -154,7 +158,10 @@ public class FileHandler {
 			inStream.close();
 			
 		} catch (FileNotFoundException e) {
-			e.printStackTrace();
+			Server.println("tournament  file is empty, initializing");
+			tournaments[0] = TEST_TOURNAMENT;
+			saveTournaments();
+			loadTournaments();
 		} catch (EOFException e){
 			Server.println("tournament  file is empty, initializing");
 			tournaments[0] = TEST_TOURNAMENT;

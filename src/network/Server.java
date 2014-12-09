@@ -1,7 +1,10 @@
 package network;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
@@ -199,6 +202,8 @@ class ClientThread extends Thread {
 	private boolean running = true;
 	private BufferedReader inputReader;
 	private PrintWriter outputWriter;
+	private ObjectInputStream objectInputStream;
+	private ObjectOutputStream objectOutputStream;
 
 	/**
 	 * 
@@ -220,16 +225,15 @@ class ClientThread extends Thread {
 	 */
 	public void run() {
 		String input;
-		String output;
 		
 		outThread.addOutput("Accepted Client : ID - " + clientID + " : Address - " + clientSocket.getInetAddress().getHostName());
 		
 		try {
 			inputReader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-			outputWriter = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()), true);
 
 			while(running) {
 				input = inputReader.readLine();
+				
 				outThread.addOutput("Client : " + clientSocket.getInetAddress().getHostName() + " Requests command : " + input);
 				
 				if(input.charAt(0) == '-'){
@@ -258,6 +262,12 @@ class ClientThread extends Thread {
 	private void sendOutput(String output, String input){
 		String[] outputLines;
 		
+		try {
+			outputWriter = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()), true);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
 		if (output.equals("quit")) {
 			command.getClientAccount().setAuthenticated(false);
 			outThread.addOutput("Stopping client thread for client : " + clientSocket.getInetAddress().getHostName());
@@ -265,6 +275,7 @@ class ClientThread extends Thread {
 			running = false;
 		}
 		else{
+			
 			outThread.addOutput("Sending output for command : " + input + " to client : " + clientSocket.getInetAddress().getHostName());
 			
 			outputLines = output.split("\\r");
@@ -282,13 +293,20 @@ class ClientThread extends Thread {
 	 * @param outputObject
 	 */
 	private void sendObject(Object outputObject){
+
 		if(outputObject == null){
 			outThread.addOutput("Failed sending object to client :" + clientSocket.getInetAddress().getHostName() + " : Object does not exist");
 			outputWriter.println("Requested object does not exist");
 		}
 		
 		else{
-			//send object to client
+			try {
+				objectOutputStream = new ObjectOutputStream(clientSocket.getOutputStream());
+				
+				objectOutputStream.writeObject(outputObject);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 }
