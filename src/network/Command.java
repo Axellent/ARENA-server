@@ -54,6 +54,9 @@ public class Command {
 		
 		case("accountID"):
 			return accountID(cmd[1]);
+		
+		case("accountType"):
+			return accountType(cmd[1]);
 		}
 		
 		return unknownCommand(cmd[0]);
@@ -136,7 +139,8 @@ public class Command {
 				+ " help - This command\r"
 				+ " login acountName password - Login with ARENA account\r"
 				+ " register accountName password type - Register a new ARENA account as user type\r"
-				+ " accountID accountName - returns the ID of the account";
+				+ " accountID accountName - returns the ID of the accountr"
+				+ " accountType accountName - returns the type of the account";
 	}
 	
 	/**
@@ -196,6 +200,24 @@ public class Command {
 		
 		if(tempAcc != null && accountName.equals(tempAcc.getName())){
 			return Integer.toString(tempAcc.getID());
+		}
+		
+		return "Could not find account : " + accountName;
+	}
+	
+	/**
+	 * 
+	 * @author Axel Sigl
+	 * @param accountName
+	 * @return
+	 */
+	private String accountType(String accountName){
+		Account tempAcc;
+		
+		tempAcc = fileHandler.searchAccounts(accountName);
+		
+		if(tempAcc != null && accountName.equals(tempAcc.getName())){
+			return tempAcc.getType();
 		}
 		
 		return "Could not find account : " + accountName;
