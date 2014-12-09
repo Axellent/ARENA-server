@@ -194,7 +194,7 @@ public class Command {
 		
 		tempAcc = fileHandler.searchAccounts(accountName);
 		
-		if(accountName.equals(tempAcc.getName())){
+		if(tempAcc != null && accountName.equals(tempAcc.getName())){
 			return Integer.toString(tempAcc.getID());
 		}
 		
