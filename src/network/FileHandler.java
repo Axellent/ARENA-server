@@ -23,7 +23,7 @@ public class FileHandler {
 	// Account for testing purposes, does not have ANY user privileges for security reasons.
 	private static final Account TEST_ACCOUNT = new Account("testName", "testPassword", "N/A", 0);
 	
-	private static final Tournament TEST_TOURNAMENT = new Tournament("testOwner", new Game() , "testTournament", 1, 1);
+	private static final Tournament TEST_TOURNAMENT = new Tournament("testOwner", new Game("testGame", 1) , "testTournament", 1, 1);
 	
 	/**
 	 * 

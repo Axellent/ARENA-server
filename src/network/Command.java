@@ -57,6 +57,9 @@ public class Command {
 		
 		case("accountType"):
 			return accountType(cmd[1]);
+		
+		case("startGame"):
+			return startGame(cmd[1], cmd[2]);
 		}
 		
 		return unknownCommand(cmd[0]);
@@ -140,7 +143,8 @@ public class Command {
 				+ " login acountName password - Login with ARENA account\r"
 				+ " register accountName password type - Register a new ARENA account as user type\r"
 				+ " accountID accountName - returns the ID of the accountr"
-				+ " accountType accountName - returns the type of the account";
+				+ " accountType accountName - returns the type of the account"
+				+ " startGame path args - launches the executable file at path with the arguments provided, the arguments must be separated by commas: \"arg1,arg2\"";
 	}
 	
 	/**
@@ -239,6 +243,30 @@ public class Command {
 		}
 		
 		return null;
+	}
+	
+	/**
+	 * 
+	 * @author Axel Sigl
+	 * @param path
+	 * @param args
+	 * @return
+	 */
+	private String startGame(String path, String args){
+		String env = "";
+		env = args.replaceAll(",", " ");
+		
+		System.out.println(path);
+		System.out.println(env);
+		
+		try {
+			Runtime.getRuntime().exec("java -jar " + path + " " + env);
+		} catch (IOException e) {
+			e.printStackTrace();
+			return "Could not find game on server";
+		}
+		
+		return "Game launched succesfully";
 	}
 	
 	/**
